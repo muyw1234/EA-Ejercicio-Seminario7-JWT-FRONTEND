@@ -6,7 +6,7 @@ import { Organizacion } from '../models/organizacion.model';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog';
-
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-usuario-list',
@@ -29,17 +29,28 @@ export class UsuarioList implements OnInit {
   expanded: { [key: string]: boolean } = {};
   limite = 10;
   mostrarTodosUsuarios = false;
+  rol: string = 'guest'; 
+  isLoggedIn = false;
+  loginForm: FormGroup;
+  loginError: string = '';
 
-  constructor(private api: UsuarioService, private fb: FormBuilder, private cdr: ChangeDetectorRef, private dialog: MatDialog) {
+  constructor(private api: UsuarioService, private fb: FormBuilder, private cdr: ChangeDetectorRef, private dialog: MatDialog, private auth: AuthService) {
     this.usuarioForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required],
       organizacion: ['', Validators.required],
+      rol: ['user', Validators.required]
+    });
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required]
     });
 
     this.searchControl = new FormControl('');
+
+    
 
   }
 
@@ -58,6 +69,12 @@ export class UsuarioList implements OnInit {
 
   //Función: leer
   ngOnInit(): void {
+    this.auth.currentRole$.subscribe(roleActual => {
+    this.rol = roleActual as 'admin' | 'user';
+    this.isLoggedIn = (roleActual !== 'guest'); 
+    this.cdr.detectChanges();
+  });
+
     this.load();
     this.loadOrganizaciones();
     
@@ -91,6 +108,27 @@ export class UsuarioList implements OnInit {
     });
   }
 
+
+  onLogin(): void {
+    const { email, password } = this.loginForm.value;
+    
+    this.auth.iniciarSesionBackend(email, password).subscribe({
+      next: (res: any) => {
+        // Guardamos token y rol
+        this.auth.login(res.accessToken);
+        this.loginError = '';
+        this.loginForm.reset();
+      },
+      error: (err) => {
+        this.loginError = 'Email o contraseña incorrectos';
+        console.error(err);
+      }
+    });
+  }
+
+  onLogout(): void {
+    this.auth.logout();
+  }
   //Función: trackBy para optimizar el ngFor
   trackById(_index: number, u: Usuario): string {
     return u._id;
@@ -137,11 +175,11 @@ guardar(): void {
   
   if (this.usuarioForm.invalid) return;
 
-  const { name, email, password, organizacion } = this.usuarioForm.value;
+  const { name, email, password, organizacion, rol } = this.usuarioForm.value;
 
   if (this.editando && this.usuarioEditId) {
     // UPDATE: pasamos id, name, email, password, organizacion
-    this.api.updateUsuario(this.usuarioEditId, name, email, password, organizacion)
+    this.api.updateUsuario(this.usuarioEditId, name, email, password, organizacion, rol)
       .subscribe({
         next: () => {
           this.resetForm();
@@ -155,8 +193,8 @@ guardar(): void {
 
   } else {
 
-    // CREATE: pasamos name, email, password, organizacion
-    this.api.createUsuario(name, email, password, organizacion)
+    // CREATE: pasamos name, email, password, organizacion, rol
+    this.api.createUsuario(name, email, password, organizacion, rol)
       .subscribe({
         next: () => {
           this.resetForm();
@@ -196,6 +234,7 @@ editar(user: Usuario): void {
 
   this.usuarioForm.patchValue({
     name: user.name,
+    rol: user.rol,
     organizacion: typeof user.organizacion === 'string'
       ? user.organizacion
       : (user.organizacion as Organizacion)?._id

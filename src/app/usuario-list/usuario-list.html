@@ -1,4 +1,30 @@
-<h2>Usuarios</h2>
+<div class="auth-section" style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+  <div *ngIf="!isLoggedIn">
+    <h3>Acceso Restringido</h3>
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()" style="display: flex; gap: 10px; align-items: flex-end;">
+      <div>
+        <label style="display: block; font-size: 12px;">Email:</label>
+        <input type="email" formControlName="email" placeholder="admin@gmail.com" style="padding: 5px;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 12px;">Contraseña:</label>
+        <input type="password" formControlName="password" style="padding: 5px;">
+      </div>
+      <button type="submit" class="btn" [disabled]="loginForm.invalid">Entrar</button>
+    </form>
+    <p *ngIf="loginError" style="color: red; font-size: 12px; margin-top: 5px;">{{ loginError }}</p>
+  </div>
+
+  <div *ngIf="isLoggedIn" style="display: flex; justify-content: space-between; align-items: center;">
+    <span>Conectado como: <strong>{{ rol | uppercase }}</strong></span>
+    <button (click)="onLogout()" class="btn" style="background: #ff4d4d; color: white;">Cerrar Sesión</button>
+  </div>
+</div>
+
+
+<h2>
+  Usuarios
+</h2>
 
 <!-- Buscador: buscar por nombre -->
 <p> <input
@@ -8,21 +34,33 @@
 /> </p>
 
 <!-- Mensajes de estado -->
-<p *ngIf="loading">Cargando...</p>
-<p *ngIf="!loading && errorMsg">{{ errorMsg }}</p>
+<p *ngIf="loading">
+  Cargando...
+</p>
+<p *ngIf="!loading && errorMsg">
+  {{ errorMsg }}
+</p>
 
 <p *ngIf="!loading && !errorMsg && usuarios.length === 0">
   No hay usuarios.
 </p>
 
 <!-- Botón para mostrar formulario de nuevo usuario -->
-<button *ngIf="!mostrarForm" type="button" class="btn" (click)="mostrarFormulario()" style="margin-bottom: 15px;">Añadir Nuevo Usuario</button>
+<button *ngIf="!mostrarForm && rol === 'admin'"
+         type="button" 
+         class="btn" 
+         (click)="mostrarFormulario()" 
+         style="margin-bottom: 15px;">
+          Añadir Nuevo Usuario
+</button>
 
 <!-- Formulario para crear o editar usuario -->
 <div *ngIf="mostrarForm" class="card">
 
   <!-- Título dinámico según si se está editando o creando un usuario -->
-  <h3>{{ editando ? 'Editar Usuario' : 'Nuevo Usuario' }}</h3>
+  <h3>
+    {{ editando ? 'Editar Usuario' : 'Nuevo Usuario' }}
+  </h3>
 
   <form [formGroup]="usuarioForm" (ngSubmit)="guardar()">
     
@@ -68,6 +106,14 @@
       </small>
     </div>
 
+    <div style="margin-bottom: 10px;">
+      <label>Rol:</label>
+      <select formControlName="rol" style="width: 100%; padding: 5px;">
+        <option value="user">Usuario</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+
     <!-- Botones de guardar y cancelar -->
     <div>
       <button type="submit" class="btn" [disabled]="usuarioForm.invalid">Guardar</button>
@@ -86,6 +132,7 @@
     <thead>
       <tr style="border-bottom: 1px solid #ccc;">
         <th>Nombre</th>
+        <th>Rol </th>
         <th>Email</th>
         <th>Organización</th>
         <th>Acciones</th>
@@ -96,10 +143,21 @@
     <tbody>
       <tr *ngFor="let u of usuariosVisibles" style="border-bottom: 1px solid #eee;">
         <td style="padding: 8px 0;">{{ u.name }}</td>
+        <td>{{ u.rol }}</td>
         <td>{{ u.email }}</td>
         <td>{{ organizacionLabel(u) }}</td> <td>
-          <button (click)="editar(u)">Editar</button>
-          <button (click)="confirmDelete(u._id, u.name)">Borrar</button>
+          <ng-container *ngIf="isLoggedIn && u.rol === 'admin'">
+            <button (click)="editar(u)">
+              Editar
+            </button>
+            <button (click)="confirmDelete(u._id, u.name)">
+              Borrar
+            </button>
+          </ng-container>
+        
+          <span *ngIf="!isLoggedIn || u.rol !== 'admin'">
+            Solo lectura
+          </span>
         </td>
       </tr>
     </tbody>

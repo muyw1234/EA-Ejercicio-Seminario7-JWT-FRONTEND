@@ -35,18 +35,18 @@ export class UsuarioService {
   }
 
   //Función: crear nuevo usuario
-  createUsuario(name: string, email: string, password: string, organizacion: string): Observable<Usuario> {
+  createUsuario(name: string, email: string, password: string, organizacion: string, rol: string): Observable<Usuario> {
     return this.http.post<Usuario>(
       `${this.baseUrl}/usuarios`,
-      { name, email, password, organizacion }
+      { name, email, password, organizacion, rol }
     );
   }
 
   //Función: actualizar usuario existente
-  updateUsuario(id: string, name: string, email: string, password: string, organizacion: string): Observable<Usuario> {
+  updateUsuario(id: string, name: string, email: string, password: string, organizacion: string, rol: string): Observable<Usuario> {
     return this.http.put<Usuario>(
       `${this.baseUrl}/usuarios/${id}`,
-      { name, email, password, organizacion } 
+      { name, email, password, organizacion, rol } 
     );
   }
 

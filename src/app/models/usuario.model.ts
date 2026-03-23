@@ -8,4 +8,5 @@ export interface Usuario {
   organizacion: Organizacion | string;
   createdAt?: string;
   updatedAt?: string;
+  rol: 'admin' | 'user';
 }
