@@ -48,6 +48,9 @@ src/
 ```
 
 ---
+## Uso de la IA
+- Corrección de errores en la conexión con el backend
+- Ayuda a generar el loginform en el usuario-list.html
 
 ## Development server
 
