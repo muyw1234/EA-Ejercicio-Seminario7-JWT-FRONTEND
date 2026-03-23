@@ -49,6 +49,7 @@ src/
 
 ---
 ## Uso de la IA
+- Se ha usado Gemini para ayudar a:
 - Corrección de errores en la conexión con el backend
 - Ayuda a generar el loginform en el usuario-list.html
 
